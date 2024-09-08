@@ -40,7 +40,7 @@ jobs:
         env:
           web_api: ${{ secrets.web_api }}
           id: ${{ secrets.id }}
-        run: python3 ./fans.py
+        run: python3 ./steam.py
       - name: '获取当前日期🕘'
         id: current_date
         run: |
