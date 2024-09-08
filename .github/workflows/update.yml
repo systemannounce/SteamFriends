@@ -45,15 +45,27 @@ jobs:
         id: current_date
         run: |
           echo "date=$(date +"%Y-%m-%d_%H-%M-%S")" >> $GITHUB_OUTPUT
+      - name: '检查更改🔍'
+        if: ${{ github.event_name != 'pull_request_target' }}
+        run: |
+          git fetch
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to commit."
+            echo "skip_commit=true" >> $GITHUB_ENV
+          else
+            echo "Changes detected."
+            echo "skip_commit=false" >> $GITHUB_ENV
+          fi
       - name: '提交data💾'
-        if: ${{github.event_name != 'pull_request_target'}}
+        if: ${{ github.event_name != 'pull_request_target' && env.skip_commit == 'false' }}
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           git add --all
           git commit -m "${{ steps.current_date.outputs.date }} Update"
+      
       - name: '提交代码🛫'
-        if: ${{github.event_name != 'pull_request_target'}}
+        if: ${{ github.event_name != 'pull_request_target' && env.skip_commit == 'false' }}
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
