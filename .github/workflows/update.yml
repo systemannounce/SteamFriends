@@ -1,6 +1,7 @@
 name: 'SteamFriends'
 
 on:
+# pull_request 只在 assigned 时才触发工作流，防止泄露 weib_api
   pull_request_target:
     types:
       - assigned
@@ -8,11 +9,11 @@ on:
       - main
     paths:
       - '**.py'
-      - '**fans.yml'
+      - '**.yml'
   # 进行手动控制
   workflow_dispatch:
   schedule:
-  # 每天运行一次
+  # 每天运行一次，如果需要更高频率或者更低的频率改这里即可。
     - cron: '0 0 * * *'
 
 permissions:
