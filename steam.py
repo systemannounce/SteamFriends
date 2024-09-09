@@ -37,8 +37,8 @@ class SteamFriends:
         self.sess = requests.Session()
         if self.args.proxy is not None:
             self.sess.proxies.update({
-                'http': args.proxy,
-                'https': args.proxy,
+                'http': self.args.proxy,
+                'https': self.args.proxy,
             })
         self.sess.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537'
                                                 '.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'})
