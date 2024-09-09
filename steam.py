@@ -68,7 +68,7 @@ class SteamFriends:
             self.avatar.append('![](' + user['avatar'] + ')')
 
     def CreateFrom(self):
-        with open('./README.md', 'r') as file:
+        with open('./README.md', 'r', encoding='utf-8') as file:
             original_content = file.read()
         is_friend = ['✅' for _ in self.avatar]
         empty_list = ['' for _ in self.avatar]
@@ -86,11 +86,11 @@ class SteamFriends:
         df = pd.DataFrame(data)
         markdown_table = df.to_markdown(index=False)
         updated_content = f"{original_content}\n\n## Steam好友列表\n\n{markdown_table}"
-        with open('./README.md', 'w') as file:
+        with open('./README.md', 'w', encoding='utf-8') as file:
             file.write(updated_content)
 
     def Update(self):
-        with open('./README.md', 'r') as file:
+        with open('./README.md', 'r', encoding='utf-8') as file:
             content = file.readlines()
 
         # 找到 Markdown 表格的开始位置
@@ -138,11 +138,11 @@ class SteamFriends:
                 df.loc[df['steamid'] == id, 'Name'] = self.name[num]
         updated_markdown_table = df.to_markdown(index=False)
         updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
-        with open('./README.md', 'w') as file:
+        with open('./README.md', 'w', encoding='utf-8') as file:
             file.write(updated_content)
 
     def UpdateOrCreate(self):
-        with open('./README.md', 'r') as file:
+        with open('./README.md', 'r', encoding='utf-8') as file:
             original_content = file.read()
         if '|' in original_content:
             self.Update()
