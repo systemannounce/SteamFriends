@@ -4,12 +4,22 @@ import pandas as pd
 from datetime import datetime
 from io import StringIO
 import os
+import argparse
 
 
 class SteamFriends:
     def __init__(self):
-        self.steam_web_api = os.environ.get('web_api')
-        self.steam_id = os.environ.get('id')
+        self.parser = argparse.ArgumentParser()
+        self.parser.add_argument('-w', '--web_api', type=str, help='Web API value')
+        self.parser.add_argument('-i', '--id', type=str, help='Steam ID')
+        self.parser.add_argument('-p', '--proxy', type=str, help='Proxy')
+
+        # 解析参数
+        self.args = self.parser.parse_args()
+
+        # 获取参数值
+        self.steam_web_api = self.args.web_api or os.environ.get('web_api')
+        self.steam_id = self.args.id or os.environ.get('id')
 
         self.friends = 0        # 总数
         self.friend_ids = []    # 向steam请求的id列表（url）
@@ -25,6 +35,11 @@ class SteamFriends:
         self.friend_list_url = 'https://api.steampowered.com/ISteamUser/GetFriendList/v0001/'
         self.friend_summaries_url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/'
         self.sess = requests.Session()
+        if args.proxy is not None:
+            self.sess.proxies.update({
+                'http': args.proxy,
+                'https': args.proxy,
+            })
         self.sess.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537'
                                                 '.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'})
 
