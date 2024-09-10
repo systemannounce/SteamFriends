@@ -55,13 +55,14 @@ class SteamFriends:
         except Exception as e:
             print(e)
             print('URL请求错误，请检查web_api和id的值是否正确，注意别多复制了空格')
+            print('如果确定自己没问题，可能是遇到了bug，请提交Issue')
             sys.exit(11)
         try:
             self.friends_list = {friend['steamid']: friend['friend_since'] for friend in json_list['friendslist']['friends']}
             self.friends = len(self.friends_list)
-        except KeyError as e:
-            print(e)
-            print('请求steam成功，但是返回的好友列表为空，请检查你的steam隐私设置。将其设置为公开，否则无法获取到好友列表。')
+        except:
+            print('请求steam成功，但似乎返回的好友列表为空，请检查你的steam隐私设置。将其设置为公开，否则无法获取到好友列表。')
+            print('如果确定自己没问题，可能是遇到了bug，请提交Issue')
             sys.exit(100)
 
     def GetFriendsSummaries(self):
