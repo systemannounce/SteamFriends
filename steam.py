@@ -59,7 +59,7 @@ class SteamFriends:
         try:
             self.friends_list = {friend['steamid']: friend['friend_since'] for friend in json_list['friendslist']['friends']}
             self.friends = len(self.friends_list)
-        except Exception as e:
+        except KeyError as e:
             print(e)
             print('请求steam成功，但是返回的好友列表为空，请检查你的steam隐私设置。将其设置为公开，否则无法获取到好友列表。')
             sys.exit(100)
