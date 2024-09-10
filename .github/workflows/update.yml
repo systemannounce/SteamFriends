@@ -1,15 +1,6 @@
 name: 'SteamFriends'
 
 on:
-# pull_request 只在 assigned 时才触发工作流，防止泄露 weib_api
-  pull_request_target:
-    types:
-      - assigned
-    branches:
-      - main
-    paths:
-      - '**.py'
-      - '**.yml'
   # 进行手动控制
   workflow_dispatch:
   schedule:
