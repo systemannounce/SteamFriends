@@ -49,21 +49,20 @@ class SteamFriends:
             'key': self.steam_web_api,
             'steamid': self.steam_id,
         }
-        try:
-            response = self.sess.get(self.friend_list_url, params=params)
-            json_list = json.loads(response.text)
-        except Exception as e:
-            print(e)
-            print('URL请求错误，请检查web_api和id的值是否正确，注意别多复制了空格')
-            print('如果确定自己没问题，可能是遇到了bug，请提交Issue')
-            sys.exit(11)
-        try:
-            self.friends_list = {friend['steamid']: friend['friend_since'] for friend in json_list['friendslist']['friends']}
-            self.friends = len(self.friends_list)
-        except:
-            print('请求steam成功，但似乎返回的好友列表为空，请检查你的steam隐私设置。将其设置为公开，否则无法获取到好友列表。')
-            print('如果确定自己没问题，可能是遇到了bug，请提交Issue')
-            sys.exit(100)
+        response = self.sess.get(self.friend_list_url, params=params)
+        if response.status_code == 200:
+            print('success')
+        elif response.status_code == 401:
+            print('Unauthorized，请检查你的steam隐私设置，如果设置为仅限好友和私密将无法获取好友列表')
+            sys.exit(401)
+        elif response.status_code == 403:
+            print('403Forbidden，请检查你的web_api和id的值，别复制了空格')
+            sys.exit(403)
+        else:
+            print(f'收到未处理的状态码：{response.status_code}')
+        json_list = json.loads(response.text)
+        self.friends_list = {friend['steamid']: friend['friend_since'] for friend in json_list['friendslist']['friends']}
+        self.friends = len(self.friends_list)
 
     def GetFriendsSummaries(self):
         for num, id in enumerate(self.friends_list):
