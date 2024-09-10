@@ -1,3 +1,4 @@
+import sys
 import requests
 import json
 import pandas as pd
@@ -49,6 +50,16 @@ class SteamFriends:
             'steamid': self.steam_id,
         }
         response = self.sess.get(self.friend_list_url, params=params)
+        if response.status_code == 200:
+            print('success')
+        elif response.status_code == 401:
+            print('Unauthorized，请检查你的steam隐私设置，如果设置为仅限好友和私密将无法获取好友列表')
+            sys.exit(401)
+        elif response.status_code == 403:
+            print('403Forbidden，请检查你的web_api和id的值，别复制了空格')
+            sys.exit(403)
+        else:
+            print(f'收到未处理的状态码：{response.status_code}')
         json_list = json.loads(response.text)
         self.friends_list = {friend['steamid']: friend['friend_since'] for friend in json_list['friendslist']['friends']}
         self.friends = len(self.friends_list)

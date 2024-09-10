@@ -1,15 +1,6 @@
 name: 'SteamFriends'
 
 on:
-# pull_request 只在 assigned 时才触发工作流，防止泄露 weib_api
-  pull_request_target:
-    types:
-      - assigned
-    branches:
-      - main
-    paths:
-      - '**.py'
-      - '**.yml'
   # 进行手动控制
   workflow_dispatch:
   schedule:
@@ -47,7 +38,6 @@ jobs:
         run: |
           echo "date=$(date +"%Y-%m-%d_%H-%M-%S")" >> $GITHUB_OUTPUT
       - name: '检查更改🔍'
-        if: ${{ github.event_name != 'pull_request_target' }}
         run: |
           git fetch
           if [ -z "$(git status --porcelain)" ]; then
@@ -58,7 +48,7 @@ jobs:
             echo "skip_commit=false" >> $GITHUB_ENV
           fi
       - name: '提交data💾'
-        if: ${{ github.event_name != 'pull_request_target' && env.skip_commit == 'false' }}
+        if: ${{ env.skip_commit == 'false' && github.repository != 'systemannounce/SteamFriends' }}
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
@@ -66,13 +56,14 @@ jobs:
           git commit -m "${{ steps.current_date.outputs.date }} Update"
       
       - name: '提交代码🛫'
-        if: ${{ github.event_name != 'pull_request_target' && env.skip_commit == 'false' }}
+        if: ${{ env.skip_commit == 'false' && github.repository != 'systemannounce/SteamFriends' }}
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref }}
-      - name: 上传Artifact💼
-        if: ${{github.event_name == 'pull_request_target'}}
+
+      - name: '上传Artifact💼'
+        if: ${{ github.repository == 'systemannounce/SteamFriends' }}
         uses: actions/upload-artifact@v4
         with:
           name: README
