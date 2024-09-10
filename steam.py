@@ -1,3 +1,4 @@
+import sys
 import requests
 import json
 import pandas as pd
@@ -48,10 +49,20 @@ class SteamFriends:
             'key': self.steam_web_api,
             'steamid': self.steam_id,
         }
-        response = self.sess.get(self.friend_list_url, params=params)
-        json_list = json.loads(response.text)
-        self.friends_list = {friend['steamid']: friend['friend_since'] for friend in json_list['friendslist']['friends']}
-        self.friends = len(self.friends_list)
+        try:
+            response = self.sess.get(self.friend_list_url, params=params)
+            json_list = json.loads(response.text)
+        except Exception as e:
+            print(e)
+            print('URL请求错误，请检查web_api和id的值是否正确，注意别多复制了空格')
+            sys.exit(11)
+        try:
+            self.friends_list = {friend['steamid']: friend['friend_since'] for friend in json_list['friendslist']['friends']}
+            self.friends = len(self.friends_list)
+        except Exception as e:
+            print(e)
+            print('请求steam成功，但是返回的好友列表为空，请检查你的steam隐私设置。将其设置为公开，否则无法获取到好友列表。')
+            sys.exit(100)
 
     def GetFriendsSummaries(self):
         for num, id in enumerate(self.friends_list):
