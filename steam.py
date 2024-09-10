@@ -1,6 +1,7 @@
 import sys
 import requests
 import json
+import re
 import pandas as pd
 from datetime import datetime
 from io import StringIO
@@ -90,7 +91,9 @@ class SteamFriends:
         for user in users_list:
             self.steamid_num.append(user['steamid'])
             self.steamid.append('[' + user['steamid'] + '](https://steamcommunity.com/profiles/' + user['steamid'] + '/)')
-            self.name.append(user['personaname'])
+            name = user['personaname']
+            name = re.sub(r'[|\-+:]', '', name)      # 防止名字中有特殊符号被误认为Markdown的表格元素
+            self.name.append(name)
             self.avatar.append('![](' + user['avatar'] + ')')
 
     def CreateFrom(self):
