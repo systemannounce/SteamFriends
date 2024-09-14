@@ -110,6 +110,7 @@ class SteamFriends:
             'steamid': self.steamid,
             'is_friend': is_friend,
             'BFD': self.bfd,
+            'removed_time': empty_list,
             'Remark': empty_list
         }
         df = pd.DataFrame(data)
@@ -148,7 +149,8 @@ class SteamFriends:
             df = pd.DataFrame()  # 处理错误时返回空 DataFrame
 
         # 重新判断好友
-        df['is_friend'] = '❌'
+        friend_array = []
+
         for num, id in enumerate(self.steamid):
             if df[df['steamid'] == id].empty:
                 # print("没有找到匹配的 ID")
@@ -158,13 +160,29 @@ class SteamFriends:
                     'steamid': self.steamid[num],
                     'is_friend': '✅',
                     'BFD': datetime.utcfromtimestamp(self.friends_list[self.steamid_num[num]]).strftime('%Y-%m-%d %H:%M:%S'),
+                    'removed_time': '',
                     'Remark': ''
                 }
                 df.loc[len(df)] = new_friend
+                friend_array.append(id)
             else:
                 df.loc[df['steamid'] == id, 'is_friend'] = '✅'
                 df.loc[df['steamid'] == id, 'Avatar'] = self.avatar[num]
                 df.loc[df['steamid'] == id, 'Name'] = self.name[num]
+                df.loc[df['steamid'] == id, 'removed_time'] = ''
+                friend_array.append(id)
+        #update complete
+        #find removed friend
+
+        for steamid in df['steamid']:
+            if steamid not in friend_array:
+                #this friend has been removed
+                df.loc[df['steamid'] == steamid, 'is_friend'] = '❌'
+                if df.loc[df['steamid'] == steamid,'removed_time'].iloc[0] == '':
+                    df.loc[df['steamid'] == steamid,'removed_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        df = df.fillna('')
+    
         updated_markdown_table = df.to_markdown(index=False)
         updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
         with open('./README.md', 'w', encoding='utf-8') as file:
