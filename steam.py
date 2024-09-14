@@ -68,11 +68,10 @@ class SteamFriends:
     def GetFriendsSummaries(self):
         for num, id in enumerate(self.friends_list):
             self.friend_ids.append(id)
-            if (num + 1)%100 == 0:
+            if (num + 1) % 100 == 0:
                 self.GetFriendsStatus()
                 self.friend_ids = []
         self.GetFriendsStatus()
-
 
     def GetFriendsStatus(self):
         if not self.friend_ids:
@@ -92,7 +91,7 @@ class SteamFriends:
             self.steamid_num.append(user['steamid'])
             self.steamid.append('[' + user['steamid'] + '](https://steamcommunity.com/profiles/' + user['steamid'] + '/)')
             name = user['personaname']
-            name = re.sub(r'[|\-+:]', '', name)      # 防止名字中有特殊符号被误认为Markdown的表格元素
+            name = re.sub(r'[|\-+:]', '', name)  # 防止名字中有特殊符号被误认为Markdown的表格元素
             self.name.append(name)
             self.avatar.append('![](' + user['avatar'] + ')')
 
@@ -110,6 +109,7 @@ class SteamFriends:
             'steamid': self.steamid,
             'is_friend': is_friend,
             'BFD': self.bfd,
+            'removed_time': empty_list,
             'Remark': empty_list
         }
         df = pd.DataFrame(data)
@@ -148,23 +148,43 @@ class SteamFriends:
             df = pd.DataFrame()  # 处理错误时返回空 DataFrame
 
         # 重新判断好友
-        df['is_friend'] = '❌'
-        for num, id in enumerate(self.steamid):
-            if df[df['steamid'] == id].empty:
+        friend_array = []
+        if 'removed_time' not in df.columns:  # 适配旧版本
+            df['removed_time'] = ''
+
+        for num, sid in enumerate(self.steamid):
+            if df[df['steamid'] == sid].empty:
                 # print("没有找到匹配的 ID")
                 new_friend = {
                     'Avatar': self.avatar[num],
                     'Name': self.name[num],
                     'steamid': self.steamid[num],
                     'is_friend': '✅',
-                    'BFD': datetime.utcfromtimestamp(self.friends_list[self.steamid_num[num]]).strftime('%Y-%m-%d %H:%M:%S'),
+                    'BFD': datetime.utcfromtimestamp(self.friends_list[self.steamid_num[num]]).strftime(
+                        '%Y-%m-%d %H:%M:%S'),
+                    'removed_time': '',
                     'Remark': ''
                 }
                 df.loc[len(df)] = new_friend
+                friend_array.append(sid)
             else:
-                df.loc[df['steamid'] == id, 'is_friend'] = '✅'
-                df.loc[df['steamid'] == id, 'Avatar'] = self.avatar[num]
-                df.loc[df['steamid'] == id, 'Name'] = self.name[num]
+                df.loc[df['steamid'] == sid, 'is_friend'] = '✅'
+                df.loc[df['steamid'] == sid, 'Avatar'] = self.avatar[num]
+                df.loc[df['steamid'] == sid, 'Name'] = self.name[num]
+                df.loc[df['steamid'] == sid, 'removed_time'] = ''
+                friend_array.append(sid)
+        # update complete
+        # find removed friend
+
+        for steamid in df['steamid']:
+            if steamid not in friend_array:
+                # this friend has been removed
+                df.loc[df['steamid'] == steamid, 'is_friend'] = '❌'
+                if df.loc[df['steamid'] == steamid, 'removed_time'].iloc[0] == '':
+                    df.loc[df['steamid'] == steamid, 'removed_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        df = df.fillna('')
+
         updated_markdown_table = df.to_markdown(index=False)
         updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
         with open('./README.md', 'w', encoding='utf-8') as file:
@@ -182,7 +202,6 @@ class SteamFriends:
         self.GetFriendList()
         self.GetFriendsSummaries()
         self.UpdateOrCreate()
-
 
 
 if __name__ == '__main__':
