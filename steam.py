@@ -149,7 +149,6 @@ class SteamFriends:
             df = pd.DataFrame()  # 处理错误时返回空 DataFrame
 
         # 重新判断好友
-        #df['is_friend'] = '❌'
         friend_array = []
 
         for num, id in enumerate(self.steamid):
@@ -178,7 +177,7 @@ class SteamFriends:
         for steamid in df['steamid']:
             if steamid not in friend_array:
                 #this friend has been removed
-                #df.loc[df['steamid'] == steamid, 'is_friend'] = '❌'
+                df.loc[df['steamid'] == steamid, 'is_friend'] = '❌'
                 if df.loc[df['steamid'] == steamid,'removed_time'].iloc[0] == '':
                     df.loc[df['steamid'] == steamid,'removed_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
