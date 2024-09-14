@@ -110,7 +110,7 @@ class SteamFriends:
             'steamid': self.steamid,
             'is_friend': is_friend,
             'BFD': self.bfd,
-            'removed_time':'',
+            'removed_time': empty_list,
             'Remark': empty_list
         }
         df = pd.DataFrame(data)
@@ -181,7 +181,7 @@ class SteamFriends:
                 if df.loc[df['steamid'] == steamid,'removed_time'].iloc[0] == '':
                     df.loc[df['steamid'] == steamid,'removed_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        df.fillna('')
+        df = df.fillna('')
     
         updated_markdown_table = df.to_markdown(index=False)
         updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
