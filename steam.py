@@ -179,8 +179,10 @@ class SteamFriends:
             if steamid not in friend_array:
                 #this friend has been removed
                 df.loc[df['steamid'] == steamid, 'is_friend'] = '❌'
-                df.loc[df['steamid'] ==steamid,'removed_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                if df.loc[df['steamid'] ==steamid,'removed_time'] == '':
+                    df.loc[df['steamid'] ==steamid,'removed_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+        df.fillna('')
     
         updated_markdown_table = df.to_markdown(index=False)
         updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
