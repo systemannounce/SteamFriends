@@ -179,10 +179,8 @@ class SteamFriends:
             if steamid not in friend_array:
                 #this friend has been removed
                 #df.loc[df['steamid'] == steamid, 'is_friend'] = '❌'
-                removed_time = df.loc[df['steamid'] ==steamid,'removed_time']
-                print(removed_time)
-                if removed_time == '':
-                    df.loc[df['steamid'] ==steamid,'removed_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                if df.loc[df['steamid'] == steamid,'removed_time'].iloc[0] == '':
+                    df.loc[df['steamid'] == steamid,'removed_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         df.fillna('')
     
