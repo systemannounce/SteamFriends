@@ -184,6 +184,7 @@ class SteamFriends:
                     df.loc[df['steamid'] == steamid, 'removed_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         df = df.fillna('')
+        df = df.sort_values(by='removed_time', ascending=False)
 
         updated_markdown_table = df.to_markdown(index=False)
         updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
