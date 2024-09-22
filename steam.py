@@ -91,7 +91,7 @@ class SteamFriends:
             self.steamid_num.append(user['steamid'])
             self.steamid.append('[' + user['steamid'] + '](https://steamcommunity.com/profiles/' + user['steamid'] + '/)')
             name = user['personaname']
-            name = re.sub(r'[|\-+:]', '', name)  # 防止名字中有特殊符号被误认为Markdown的表格元素
+            name = re.sub(r'[|\-+:\\\"\'\n\r]', '`', name)  # 防止名字中有特殊符号影响程序和渲染
             self.name.append(name)
             self.avatar.append('![](' + user['avatar'] + ')')
 
@@ -135,6 +135,8 @@ class SteamFriends:
         # 转换 Markdown 表格为 pandas DataFrame
         # 去掉表头的分隔线
         table_content = '\n'.join(line for line in table_content.strip().split('\n') if not line.startswith('|:'))
+
+        table_content = re.sub(r'[\"\']', '', table_content)    # 临时补牢，最终解决办法见上面名字替换字符
 
         # 使用 tabulate 解析表格内容
         try:
