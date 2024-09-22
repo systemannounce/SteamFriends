@@ -59,6 +59,9 @@ class SteamFriends:
         elif response.status_code == 403:
             print('403Forbidden，请检查你的web_api和id的值，别复制了空格')
             sys.exit(403)
+        elif response.status_code == 500:
+            print('服务器内部错误，请检查你的steamid的值，不要多复制或者少复制了几位。')
+            sys.exit(500)
         else:
             print(f'收到未处理的状态码：{response.status_code}')
         json_list = json.loads(response.text)
@@ -85,15 +88,22 @@ class SteamFriends:
             'steamids': steam_ids,
         }
         response = self.sess.get(self.friend_summaries_url, params=params)
-        json_list = json.loads(response.text)
-        users_list = json_list['response']['players']
-        for user in users_list:
-            self.steamid_num.append(user['steamid'])
-            self.steamid.append('[' + user['steamid'] + '](https://steamcommunity.com/profiles/' + user['steamid'] + '/)')
-            name = user['personaname']
-            name = re.sub(r'[|\-+:\\\"\'\n\r]', '`', name)  # 防止名字中有特殊符号影响程序和渲染
-            self.name.append(name)
-            self.avatar.append('![](' + user['avatar'] + ')')
+        if response.status_code == 200:
+            json_list = json.loads(response.text)
+            users_list = json_list['response']['players']
+            for user in users_list:
+                self.steamid_num.append(user['steamid'])
+                self.steamid.append('[' + user['steamid'] + '](https://steamcommunity.com/profiles/' + user['steamid'] + '/)')
+                name = user['personaname']
+                name = re.sub(r'[|\-+:\\\"\'\n\r]', '`', name)  # 防止名字中有特殊符号影响程序和渲染
+                self.name.append(name)
+                self.avatar.append('![](' + user['avatar'] + ')')
+        elif response.status_code == 429:
+            print("429 Too Many Requests, 可能是web_api被ban，请重新注册一个试试？")
+            sys.exit(429)
+        else:
+            print(response.text)
+            sys.exit(7)
 
     def CreateFrom(self):
         with open('./README.md', 'r', encoding='utf-8') as file:
