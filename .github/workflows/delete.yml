@@ -1,0 +1,64 @@
+name: 'Delete non-friends record'
+
+on:
+  # 进行手动控制
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  Update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: '下载源码🏗️'
+        uses: actions/checkout@v4
+      - name: '设置Python环境🔄️'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: '安装依赖☑️'
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install -r ./requirements.txt
+      - name: '运行程序💻'
+        env:
+        run: python3 ./delete.py
+      - name: '获取当前日期🕘'
+        id: current_date
+        run: |
+          echo "date=$(date +"%Y-%m-%d_%H-%M-%S")" >> $GITHUB_OUTPUT
+      - name: '检查更改🔍'
+        run: |
+          git fetch
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to commit."
+            echo "skip_commit=true" >> $GITHUB_ENV
+          else
+            echo "Changes detected."
+            echo "skip_commit=false" >> $GITHUB_ENV
+          fi
+      - name: '提交data💾'
+        if: ${{ env.skip_commit == 'false' && github.repository != 'systemannounce/SteamFriends' }}
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add --all
+          git commit -m "${{ steps.current_date.outputs.date }} Delete All non-friends record"
+
+      - name: '提交代码🛫'
+        if: ${{ env.skip_commit == 'false' && github.repository != 'systemannounce/SteamFriends' }}
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+      - name: '上传Artifact💼'
+        if: ${{ github.repository == 'systemannounce/SteamFriends' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: README
+          path: ./README.md
