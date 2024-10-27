@@ -157,7 +157,8 @@ class SteamFriends:
             df = df.fillna('')  # 删除所有NaN单元格
         except Exception as e:
             print("Error:", e)
-            df = pd.DataFrame()  # 处理错误时返回空 DataFrame
+            print("处理README文件异常，请提交Issue，或者重新Fork一次仓库试试？")
+            sys.exit(10)
 
         # 重新判断好友
         friend_array = []
@@ -197,6 +198,50 @@ class SteamFriends:
 
         df = df.fillna('')
         df = df.sort_values(by='removed_time', ascending=False)
+
+        updated_markdown_table = df.to_markdown(index=False)
+        updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
+        with open('./README.md', 'w', encoding='utf-8') as file:
+            file.write(updated_content)
+
+    @staticmethod
+    def delete_non_friends():
+        with open('./README.md', 'r', encoding='utf-8') as file:
+            content = file.readlines()
+
+        # 找到 Markdown 表格的开始位置
+        table_start_index = None
+        for i, line in enumerate(content):
+            if line.strip().startswith('|'):
+                table_start_index = i
+                break
+
+        # 提取表格内容
+        table_content = ''.join(content[table_start_index:])
+
+        # 转换 Markdown 表格为 pandas DataFrame
+        # 去掉表头的分隔线
+        table_content = '\n'.join(line for line in table_content.strip().split('\n') if not line.startswith('|:'))
+
+        table_content = re.sub(r'[\"\']', '', table_content)    # 临时补牢，最终解决办法见上面名字替换字符
+
+        # 使用 tabulate 解析表格内容
+        try:
+            df = pd.read_csv(StringIO(table_content), sep='|', engine='python', skipinitialspace=True)
+            df.columns = [col.strip() for col in df.columns]  # 去掉列名的多余空格
+            df = df.apply(lambda x: x.map(lambda y: y.strip() if isinstance(y, str) else y))  # 去除每一个值里面多余的空格
+            df = df.iloc[:, 1:-1]  # 去掉第一列和最后一列的空白列
+            df = df.fillna('')  # 删除所有NaN单元格
+
+            # 删除 is_friend 列中包含 ❌ 的行
+            df = df[df['is_friend'] != '❌']
+
+        except Exception as e:
+            print("Error:", e)
+            print("处理README文件异常，请提交Issue，或者重新Fork一次仓库试试？")
+            sys.exit(10)
+
+        df = df.fillna('')
 
         updated_markdown_table = df.to_markdown(index=False)
         updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
