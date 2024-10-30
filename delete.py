@@ -1,4 +1,5 @@
 import steam
 
 if __name__ == '__main__':
-    steam.SteamFriends.delete_non_friends()
+    app = steam.SteamFriends()
+    app.delete_non_friends()

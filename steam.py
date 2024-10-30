@@ -34,6 +34,10 @@ class SteamFriends:
         self.profileurl = []    # 暂时没用
         self.avatar = []        # 头像（Markdown格式）
 
+        # 重构版本利用当前类来存储 README 原始内容和记录表格开始行号（可修改）。
+        self.content = []
+        self.table_start_index = 0
+
         self.friend_list_url = 'https://api.steampowered.com/ISteamUser/GetFriendList/v0001/'
         self.friend_summaries_url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/'
         self.sess = requests.Session()
@@ -45,7 +49,7 @@ class SteamFriends:
         self.sess.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537'
                                                 '.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'})
 
-    def GetFriendList(self):
+    def get_friend_list(self):
         params = {
             'key': self.steam_web_api,
             'steamid': self.steam_id,
@@ -68,15 +72,15 @@ class SteamFriends:
         self.friends_list = {friend['steamid']: friend['friend_since'] for friend in json_list['friendslist']['friends']}
         self.friends = len(self.friends_list)
 
-    def GetFriendsSummaries(self):
+    def get_friends_summaries(self):
         for num, id in enumerate(self.friends_list):
             self.friend_ids.append(id)
             if (num + 1) % 100 == 0:
-                self.GetFriendsStatus()
+                self.get_friends_status()
                 self.friend_ids = []
-        self.GetFriendsStatus()
+        self.get_friends_status()
 
-    def GetFriendsStatus(self):
+    def get_friends_status(self):
         if not self.friend_ids:
             return False
         steam_ids = ''
@@ -105,9 +109,9 @@ class SteamFriends:
             print(response.text)
             sys.exit(7)
 
-    def CreateFrom(self):
+    def create_from(self):
         with open('./README.md', 'r', encoding='utf-8') as file:
-            original_content = file.read()
+            original_content = file.readlines()
         is_friend = ['✅' for _ in self.avatar]
         empty_list = ['' for _ in self.avatar]
         for steamid in self.steamid_num:
@@ -123,43 +127,13 @@ class SteamFriends:
             'Remark': empty_list
         }
         df = pd.DataFrame(data)
-        markdown_table = df.to_markdown(index=False)
-        updated_content = f"{original_content}\n\n## Steam好友列表\n\n{markdown_table}"
-        with open('./README.md', 'w', encoding='utf-8') as file:
-            file.write(updated_content)
+        original_content.append('\n\n')
+        original_content.append('## Steam好友列表')
+        original_content.append('\n')
+        self.write_readme_db(df, original_content, len(original_content))
 
-    def Update(self):
-        with open('./README.md', 'r', encoding='utf-8') as file:
-            content = file.readlines()
-
-        # 找到 Markdown 表格的开始位置
-        table_start_index = None
-        for i, line in enumerate(content):
-            if line.strip().startswith('|'):
-                table_start_index = i
-                break
-
-        # 提取表格内容
-        table_content = ''.join(content[table_start_index:])
-
-        # 转换 Markdown 表格为 pandas DataFrame
-        # 去掉表头的分隔线
-        table_content = '\n'.join(line for line in table_content.strip().split('\n') if not line.startswith('|:'))
-
-        table_content = re.sub(r'[\"\']', '', table_content)    # 临时补牢，最终解决办法见上面名字替换字符
-
-        # 使用 tabulate 解析表格内容
-        try:
-            df = pd.read_csv(StringIO(table_content), sep='|', engine='python', skipinitialspace=True)
-            df.columns = [col.strip() for col in df.columns]  # 去掉列名的多余空格
-            df = df.apply(lambda x: x.map(lambda y: y.strip() if isinstance(y, str) else y))  # 去除每一个值里面多余的空格
-            df = df.iloc[:, 1:-1]  # 去掉第一列和最后一列的空白列
-            df = df.fillna('')  # 删除所有NaN单元格
-        except Exception as e:
-            print("Error:", e)
-            print("处理README文件异常，请提交Issue，或者重新Fork一次仓库试试？")
-            sys.exit(10)
-
+    def update(self):
+        df = self.read_readme_db()
         # 重新判断好友
         friend_array = []
         if 'removed_time' not in df.columns:  # 适配旧版本
@@ -199,25 +173,21 @@ class SteamFriends:
         df = df.fillna('')
         df = df.sort_values(by='removed_time', ascending=False)
 
-        updated_markdown_table = df.to_markdown(index=False)
-        updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
-        with open('./README.md', 'w', encoding='utf-8') as file:
-            file.write(updated_content)
+        self.write_readme_db(df, self.content, self.table_start_index)
 
-    @staticmethod
-    def delete_non_friends():
+    def read_readme_db(self):
         with open('./README.md', 'r', encoding='utf-8') as file:
-            content = file.readlines()
+            self.content = file.readlines()
 
         # 找到 Markdown 表格的开始位置
-        table_start_index = None
-        for i, line in enumerate(content):
+        self.table_start_index = None
+        for i, line in enumerate(self.content):
             if line.strip().startswith('|'):
-                table_start_index = i
+                self.table_start_index = i
                 break
 
         # 提取表格内容
-        table_content = ''.join(content[table_start_index:])
+        table_content = ''.join(self.content[self.table_start_index:])
 
         # 转换 Markdown 表格为 pandas DataFrame
         # 去掉表头的分隔线
@@ -232,36 +202,39 @@ class SteamFriends:
             df = df.apply(lambda x: x.map(lambda y: y.strip() if isinstance(y, str) else y))  # 去除每一个值里面多余的空格
             df = df.iloc[:, 1:-1]  # 去掉第一列和最后一列的空白列
             df = df.fillna('')  # 删除所有NaN单元格
-
-            # 删除 is_friend 列中包含 ❌ 的行
-            df = df[df['is_friend'] != '❌']
-
         except Exception as e:
             print("Error:", e)
             print("处理README文件异常，请提交Issue，或者重新Fork一次仓库试试？")
             sys.exit(10)
+        return df
 
-        df = df.fillna('')
-
+    @staticmethod
+    def write_readme_db(df, content, table_start_index):
         updated_markdown_table = df.to_markdown(index=False)
         updated_content = ''.join(content[:table_start_index]) + updated_markdown_table
         with open('./README.md', 'w', encoding='utf-8') as file:
             file.write(updated_content)
 
-    def UpdateOrCreate(self):
+    def delete_non_friends(self):
+        df = self.read_readme_db()
+        # 删除 is_friend 列中包含 ❌ 的行
+        df = df[df['is_friend'] != '❌']
+        self.write_readme_db(df, self.content, self.table_start_index)
+
+    def update_or_create(self):
         with open('./README.md', 'r', encoding='utf-8') as file:
             original_content = file.read()
         if '|' in original_content:
-            self.Update()
+            self.update()
         else:
-            self.CreateFrom()
+            self.create_from()
 
-    def GetData(self):
-        self.GetFriendList()
-        self.GetFriendsSummaries()
-        self.UpdateOrCreate()
+    def get_data(self):
+        self.get_friend_list()
+        self.get_friends_summaries()
+        self.update_or_create()
 
 
 if __name__ == '__main__':
     app = SteamFriends()
-    app.GetData()
+    app.get_data()
